@@ -49,12 +49,16 @@ angular.module('myApp.view1', ['ngRoute'])
 
         var entropyInit = entropyB(p / (p + n));
 
-        getTreeDecision(samples, attributes, samples);
+        var tree = getTreeDecision(samples, attributes, samples);
+
+        console.log("DecisionTree");
+        console.log(tree);
 
         function getTreeDecision(samples, attributes, parentSample) {
             var decisionTree = {},
                 importanceTmp = null,
-                attributeChosen, // A1, A2, A3
+                attributeChosen, // A1, A2, A3,
+                attributeChosenIndex, // 0, 1, 2
                 importanceResults = [];
 
 
@@ -73,13 +77,16 @@ angular.module('myApp.view1', ['ngRoute'])
             }
 
             // Retrieve the attribute with the highest 'importance'
+            var i = 0;
             for (var attribute in attributes) {
                 var imp = importance(attributes[attribute], samples);
                 importanceResults.push("Importance for " + attribute + " = " + imp);
                 if (importanceTmp == null || importanceTmp < imp) {
                     importanceTmp = imp;
                     attributeChosen = attribute;
+                    attributeChosenIndex = i;
                 }
+                i++;
             }
             $scope.importanceResults = importanceResults;
             $scope.attributeChosen = attributeChosen;
@@ -87,14 +94,15 @@ angular.module('myApp.view1', ['ngRoute'])
             decisionTree = new NodeQuery(attributeChosen);
             for (var value in values[attributeChosen]) {
                 console.log("Retrieving the samples for attribute " + attributeChosen + " : " + value);
-                var attributeIndex = attribute[attributeChosen];
+                var attributeIndex = attributes[attributeChosen];
                 var exs = [];
-                for (var sample in samples) {
-                    if (sample[attributeIndex] === value) {
+                for (var index in samples) {
+                    var sample = samples[index];
+                    if (sample.values[attributeIndex] === parseInt(value)) {
                         exs.push(sample);
                         delete attributes[attributeChosen];
                         var subTree = getTreeDecision(exs, attributes, samples)
-                        var edge = new edge(decisionTree, subTree, value);
+                        var edge = new Edge(decisionTree, subTree, value);
                         decisionTree.edge = edge;
                     }
                 }
@@ -136,7 +144,7 @@ angular.module('myApp.view1', ['ngRoute'])
             var sameClassification = true,
                 refSample = samples[0];
             if (samples.length > 1) {
-                for (var i = 1;  i < samples.length; i++) {
+                for (var i = 1; i < samples.length; i++) {
                     if (samples[i].output !== refSample.output) {
                         sameClassification = false;
                     }
