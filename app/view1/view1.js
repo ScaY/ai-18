@@ -34,7 +34,7 @@ angular.module('myApp.view1', ['ngRoute'])
         //Node structure
         var NodeQuery = function (attribute) {
             this.attribute = attribute;
-            this.edge = null;
+            this.edge = [];
         };
 
         var Edge = function (nodeFrom, nodeTo, attributeValue) {
@@ -103,7 +103,7 @@ angular.module('myApp.view1', ['ngRoute'])
                         delete attributes[attributeChosen];
                         var subTree = getTreeDecision(exs, attributes, samples)
                         var edge = new Edge(decisionTree, subTree, value);
-                        decisionTree.edge = edge;
+                        decisionTree.edge.push(edge);
                     }
                 }
             }
