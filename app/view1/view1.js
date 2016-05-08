@@ -19,7 +19,9 @@ angular.module('myApp.view1', ['ngRoute'])
 
         // attribute name - attribute index
         var attributes = {"A1": 0, "A2": 1, "A3": 2};
-
+        // attribute name - attribute value
+        var values = {"A1": [1, 0], "A2": [1, 0], "A3": [1, 0]};
+        // samples for the learning
         var samples = [new Sample([1, 0, 0], 0),
             new Sample([1, 0, 1], 0),
             new Sample([0, 1, 0], 0),
@@ -29,33 +31,127 @@ angular.module('myApp.view1', ['ngRoute'])
         var p = 2,
             n = 3;
 
+        //Node structure
+        var NodeQuery = function (attribute) {
+            this.attribute = attribute;
+            this.edge = null;
+        };
+
+        var Edge = function (nodeFrom, nodeTo, attributeValue) {
+            this.nodeFrom = nodeFrom;
+            this.nodeTo = nodeTo;
+            this.attributeValue = attributeValue;
+        };
+
+        var NodeResult = function (value) {
+            this.value = value;
+        };
+
         var entropyInit = entropyB(p / (p + n));
 
-        getTreeDecision(samples, attributes, null);
+        getTreeDecision(samples, attributes, samples);
 
         function getTreeDecision(samples, attributes, parentSample) {
-            var decisionTree = null;
+            var decisionTree = {},
+                importanceTmp = null,
+                attributeChosen, // A1, A2, A3
+                importanceResults = [];
 
-            var importanceTmp = null,
-                attributeChosen;
 
-            var importanceResults = [];
+            // Determine the classification from the parent samples if there is no more sample.
+            if (samples.length === 0) {
+                return pluralityValue(parentSample);
+            }
+            // Check if the sample have the same classification.
+            var classification = checkClassification(samples);
+            if (classification != null) {
+                return new NodeResult(classification);
+            }
+            // Check if the attributes array is empty
+            if (Object.keys(attributes).length === 0) {
+                return new NodeResult(samples);
+            }
 
+            // Retrieve the attribute with the highest 'importance'
             for (var attribute in attributes) {
                 var imp = importance(attributes[attribute], samples);
-
                 importanceResults.push("Importance for " + attribute + " = " + imp);
                 if (importanceTmp == null || importanceTmp < imp) {
                     importanceTmp = imp;
                     attributeChosen = attribute;
                 }
             }
-
             $scope.importanceResults = importanceResults;
             $scope.attributeChosen = attributeChosen;
+
+            decisionTree = new NodeQuery(attributeChosen);
+            for (var value in values[attributeChosen]) {
+                console.log("Retrieving the samples for attribute " + attributeChosen + " : " + value);
+                var attributeIndex = attribute[attributeChosen];
+                var exs = [];
+                for (var sample in samples) {
+                    if (sample[attributeIndex] === value) {
+                        exs.push(sample);
+                        delete attributes[attributeChosen];
+                        var subTree = getTreeDecision(exs, attributes, samples)
+                        var edge = new edge(decisionTree, subTree, value);
+                        decisionTree.edge = edge;
+                    }
+                }
+            }
+
             return decisionTree;
         }
 
+
+        /**
+         * Determinate a classification (the most common) corresponding to the sample
+         * @param samples
+         */
+        function pluralityValue(samples) {
+            var classifications = {},
+                classificationMax = null;
+            for (var sample in samples) {
+                if (classifications[sample.output] === null) {
+                    classifications[sample.output] = 1;
+                } else {
+                    classifications[sample.output]++;
+                }
+            }
+            for (var output in classifications) {
+                if (classificationMax === null) {
+                    classificationMax = classifications[output];
+                } else if (classificationMax < classifications[output]) {
+                    classificationMax = classifications[output];
+                }
+            }
+            console.log("PluralityValue classification : ", classificationMax);
+            return new NodeResult(classificationMax);
+        }
+
+        /**
+         * Return the classification if all the examples have the same classification
+         */
+        function checkClassification(samples) {
+            var sameClassification = true,
+                refSample = samples[0];
+            if (samples.length > 1) {
+                for (var i = 1;  i < samples.length; i++) {
+                    if (samples[i].output !== refSample.output) {
+                        sameClassification = false;
+                    }
+                }
+            }
+
+            return (sameClassification ? refSample.output : null);
+        }
+
+        /**
+         * Calculate the importance with samples for a corresponding attribute
+         * @param attributeIndex
+         * @param samples
+         * @returns {number} - importance
+         */
         function importance(attributeIndex, samples) {
             var restTmp = 0.0;
 
@@ -64,7 +160,6 @@ angular.module('myApp.view1', ['ngRoute'])
             }
 
             return entropyInit - restTmp;
-
         }
 
         function rest(samples, attributeIndex, value) {
