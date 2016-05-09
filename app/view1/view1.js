@@ -48,14 +48,38 @@ angular.module('myApp.view1', ['ngRoute'])
         };
 
         var entropyInit = entropyB(p / (p + n));
-
-        var tree = getTreeDecision(samples, attributes, samples);
+        var rootNode = getTreeDecision(samples, attributes, samples);
+        var sampleToTest = samples[0];
+        var result = getResultFromSample(rootNode, sampleToTest);
 
         console.log("DecisionTree");
-        console.log(tree);
+        console.log(rootNode);
+        console.log("Result for ", sampleToTest, ' -> ', result);
+
+        function getResultFromSample(rootNode, sample) {
+            var result = null;
+
+            if (rootNode instanceof NodeQuery) {
+                var currentAttribute = rootNode.attribute;
+                var attributeIndex = attributes[currentAttribute];
+                var valueAttribute = sample.values[attributeIndex];
+                for (var i = 0; i < rootNode.edge.length && result === null; i++) {
+                    var edge = rootNode.edge[i];
+                    if (parseInt(edge.attributeValue) === valueAttribute) {
+                        if (edge.nodeTo instanceof NodeResult) {
+                            result = edge.nodeTo.value;
+                        } else if (edge.nodeTo instanceof NodeQuery) {
+                            result = getResultFromSample(edge.nodeTo, sample);
+                        }
+                    }
+                }
+            }
+
+            return result
+        }
 
         function getTreeDecision(samples, attributes, parentSample) {
-            var decisionTree = {},
+            var decisionRootNode = {},
                 importanceTmp = null,
                 attributeChosen, // A1, A2, A3,
                 attributeChosenIndex, // 0, 1, 2
@@ -91,7 +115,7 @@ angular.module('myApp.view1', ['ngRoute'])
             $scope.importanceResults = importanceResults;
             $scope.attributeChosen = attributeChosen;
 
-            decisionTree = new NodeQuery(attributeChosen);
+            decisionRootNode = new NodeQuery(attributeChosen);
             for (var value in values[attributeChosen]) {
                 console.log("Retrieving the samples for attribute " + attributeChosen + " : " + value);
                 var attributeIndex = attributes[attributeChosen];
@@ -100,15 +124,16 @@ angular.module('myApp.view1', ['ngRoute'])
                     var sample = samples[index];
                     if (sample.values[attributeIndex] === parseInt(value)) {
                         exs.push(sample);
-                        delete attributes[attributeChosen];
-                        var subTree = getTreeDecision(exs, attributes, samples)
-                        var edge = new Edge(decisionTree, subTree, value);
-                        decisionTree.edge.push(edge);
                     }
                 }
+                var attributesCopy = JSON.parse(JSON.stringify(attributes));
+                delete attributesCopy[attributeChosen];
+                var subTree = getTreeDecision(exs, attributesCopy, samples)
+                var edge = new Edge(decisionRootNode, subTree, value);
+                decisionRootNode.edge.push(edge);
             }
 
-            return decisionTree;
+            return decisionRootNode;
         }
 
 
