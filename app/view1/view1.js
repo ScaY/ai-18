@@ -28,6 +28,9 @@ angular.module('myApp.view1', ['ngRoute'])
             new Sample([1, 1, 1], 1),
             new Sample([1, 1, 0], 1)];
 
+        $scope.samples = samples;
+        $scope.attributes = attributes;
+
         var p = 2,
             n = 3;
 
@@ -50,16 +53,78 @@ angular.module('myApp.view1', ['ngRoute'])
         var entropyInit = entropyB(p / (p + n));
         var rootNode = getTreeDecision(samples, attributes, samples);
         var sampleToTest = samples[0];
-        var result = getResultFromSample(rootNode, sampleToTest);
+        var obj = getResultFromSample(rootNode, sampleToTest, []);
+        var result = obj[0];
+        var path = obj[1];
 
         console.log("DecisionTree");
         console.log(rootNode);
         console.log("Result for ", sampleToTest, ' -> ', result);
 
-        function getResultFromSample(rootNode, sample) {
+        var space = 100;
+        var xStart = 1;
+        var width = 40;
+        var height = 20;
+
+        var paper = Raphael(300, 300, 500, 500);
+        Raphael.el.blue = function () {
+            this.attr({fill: "#87CEFA"});
+        };
+
+        buildGraph(rootNode, 1, 1, path);
+
+        function buildGraph(rootNode, depth, x, path) {
+
+            var xGraph = x * (space * 2);
+            var yGraph = depth * space;
+            var nodeView = paper.ellipse(xGraph, yGraph, width, height);
+
+            if (rootNode instanceof NodeQuery) {
+                paper.text(xGraph, yGraph, rootNode.attribute);
+                if (path.length !== 0 && path[0] instanceof NodeQuery && path[0].attribute === rootNode.attribute) {
+                    nodeView.blue();
+                    path.shift();
+                }
+            } else {
+                paper.text(xGraph, yGraph, rootNode.value);
+                if (path.length !== 0 && path[0] === rootNode.value) {
+                    nodeView.blue();
+                    path.shift();
+                }
+            }
+
+            if (rootNode.edge != undefined) {
+                var newDepth = depth + 1;
+                for (var i = 0; i < rootNode.edge.length; i++) {
+                    var edge = rootNode.edge[i];
+                    var newXGraph = (i + xStart );
+                    buildGraph(edge.nodeTo, newDepth, newXGraph, path);
+                    var pathDim = "M" + addRadius(xGraph, height) + " " + addRadius(yGraph, width)
+                        + "L" + removeRadius((newXGraph * space * 2), height) + " " + removeRadius((newDepth * space), width);
+                    console.log(pathDim);
+                    var path = paper.path(pathDim);
+                    path.attr({
+                        'arrow-end': 'classic-wide-long',
+                        'stroke': '#87CEFA',
+                        'stroke-width': 3
+                    });
+                }
+            }
+        }
+
+        function removeRadius(position, diameter) {
+            return position - (diameter / 2);
+        }
+
+        function addRadius(position, diameter) {
+            return position + (diameter / 2);
+        }
+
+        function getResultFromSample(rootNode, sample, path) {
             var result = null;
 
             if (rootNode instanceof NodeQuery) {
+                path.push(rootNode);
                 var currentAttribute = rootNode.attribute;
                 var attributeIndex = attributes[currentAttribute];
                 var valueAttribute = sample.values[attributeIndex];
@@ -68,6 +133,7 @@ angular.module('myApp.view1', ['ngRoute'])
                     if (parseInt(edge.attributeValue) === valueAttribute) {
                         if (edge.nodeTo instanceof NodeResult) {
                             result = edge.nodeTo.value;
+                            path.push(result);
                         } else if (edge.nodeTo instanceof NodeQuery) {
                             result = getResultFromSample(edge.nodeTo, sample);
                         }
@@ -75,7 +141,7 @@ angular.module('myApp.view1', ['ngRoute'])
                 }
             }
 
-            return result
+            return [result, path];
         }
 
         function getTreeDecision(samples, attributes, parentSample) {

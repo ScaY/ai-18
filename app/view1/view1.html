@@ -1,7 +1,16 @@
-<p>Attribute choseen {{attributeChosen}}</p>
+<table>
+    <tr>
+        <td ng-repeat="(k, v) in attributes">{{k}}</td>
+        <td>Output</td>
+    </tr>
+    <tr ng-repeat="s in samples">
+        <td ng-repeat="value in s.values track by $index">
+            {{value}}
+        </td>
+        <td>{{ s.output }}</td>
+    </tr>
+</table>
 
-<ul>
-    <li ng-repeat="result in importanceResults">
-        <p>{{result}}</p>
-    </li>
-</ul>
+<form ng-submit="">
+    <input type="number" placeholder="Id sample">
+</form>
