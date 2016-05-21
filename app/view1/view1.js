@@ -11,6 +11,9 @@ angular.module('myApp.view1', ['ngRoute'])
 
     .controller('View1Ctrl', ['$scope', function ($scope) {
         $scope.attributesImportance = [];
+        $scope.output = null;
+        $scope.indexSample = 0;
+
 
         var Sample = function (attributesValue, output) {
             this.values = attributesValue;
@@ -56,15 +59,34 @@ angular.module('myApp.view1', ['ngRoute'])
         var obj = getResultFromSample(rootNode, sampleToTest, []);
         var result = obj[0];
         var path = obj[1];
+        $scope.resultOutput = result;
+        $scope.indexSampleAfter = "0";
+
 
         console.log("DecisionTree");
         console.log(rootNode);
         console.log("Result for ", sampleToTest, ' -> ', result);
 
+        $scope.getResult = function () {
+            var result = getResultFromSample(rootNode, samples[$scope.indexSample], []);
+            $scope.resultOutput = result[0];
+            $scope.indexSampleAfter = $scope.indexSample;
+            console.log(result[0] + ' for ' + $scope.indexSample);
+            var path = result[1];
+            //removing all the shapes
+            for (var i = 0; i < figures.length; i++) {
+                figures[i].remove();
+            }
+            figures = [];
+            buildGraph(rootNode, 1, 1, path);
+        };
+
+
         var space = 100;
         var xStart = 1;
         var width = 40;
         var height = 20;
+        var figures = [];
 
         var paper = Raphael(300, 300, 500, 500);
         Raphael.el.blue = function () {
@@ -78,15 +100,18 @@ angular.module('myApp.view1', ['ngRoute'])
             var xGraph = x * (space * 2);
             var yGraph = depth * space;
             var nodeView = paper.ellipse(xGraph, yGraph, width, height);
+            figures.push(nodeView);
 
             if (rootNode instanceof NodeQuery) {
-                paper.text(xGraph, yGraph, rootNode.attribute);
+                var text = paper.text(xGraph, yGraph, rootNode.attribute);
+                figures.push(text);
                 if (path.length !== 0 && path[0] instanceof NodeQuery && path[0].attribute === rootNode.attribute) {
                     nodeView.blue();
                     path.shift();
                 }
             } else {
-                paper.text(xGraph, yGraph, rootNode.value);
+                var text = paper.text(xGraph, yGraph, rootNode.value);
+                figures.push(text);
                 if (path.length !== 0 && path[0] === rootNode.value) {
                     nodeView.blue();
                     path.shift();
@@ -101,13 +126,13 @@ angular.module('myApp.view1', ['ngRoute'])
                     buildGraph(edge.nodeTo, newDepth, newXGraph, path);
                     var pathDim = "M" + addRadius(xGraph, height) + " " + addRadius(yGraph, width)
                         + "L" + removeRadius((newXGraph * space * 2), height) + " " + removeRadius((newDepth * space), width);
-                    console.log(pathDim);
-                    var path = paper.path(pathDim);
-                    path.attr({
+                    var pathLine = paper.path(pathDim);
+                    pathLine.attr({
                         'arrow-end': 'classic-wide-long',
                         'stroke': '#87CEFA',
                         'stroke-width': 3
                     });
+                    figures.push(pathLine);
                 }
             }
         }
@@ -135,7 +160,7 @@ angular.module('myApp.view1', ['ngRoute'])
                             result = edge.nodeTo.value;
                             path.push(result);
                         } else if (edge.nodeTo instanceof NodeQuery) {
-                            result = getResultFromSample(edge.nodeTo, sample);
+                            result = getResultFromSample(edge.nodeTo, sample, path)[0];
                         }
                     }
                 }

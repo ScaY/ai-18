@@ -11,6 +11,7 @@
     </tr>
 </table>
 
-<form ng-submit="">
-    <input type="number" placeholder="Id sample">
+<p>Output {{resultOutput}} for sample n° {{indexSampleAfter}}</p>
+<form ng-submit="getResult()">
+    <input type="number" placeholder="Sample index" ng-model="indexSample">
 </form>
