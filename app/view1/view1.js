@@ -21,21 +21,52 @@ angular.module('myApp.view1', ['ngRoute'])
         };
 
         // attribute name - attribute index
-        var attributes = {"A1": 0, "A2": 1, "A3": 2};
+        var attributes1 = {"A1": 0, "A2": 1, "A3": 2};
         // attribute name - attribute value
-        var values = {"A1": [1, 0], "A2": [1, 0], "A3": [1, 0]};
+        var values1 = {"A1": [1, 0], "A2": [1, 0], "A3": [1, 0]};
         // samples for the learning
-        var samples = [new Sample([1, 0, 0], 0),
+        var samples1 = [new Sample([1, 0, 0], 0),
             new Sample([1, 0, 1], 0),
             new Sample([0, 1, 0], 0),
             new Sample([1, 1, 1], 1),
             new Sample([1, 1, 0], 1)];
 
-        $scope.samples = samples;
-        $scope.attributes = attributes;
+        var attributes2 = {"A1": 0, "A2": 1, "A3": 2, "A4": 3};
+        var values2 = {"A1": [1, 0], "A2": [1, 0], "A3": [1, 0], "A4": [1, 0]};
+        var samples2 = [new Sample([1, 0, 0, 0], 0),
+            new Sample([1, 0, 1, 0], 0),
+            new Sample([1, 0, 1, 1], 0),
+            new Sample([0, 1, 0, 0], 1),
+            new Sample([0, 1, 0, 1], 0),
+            new Sample([1, 1, 1, 0], 1),
+            new Sample([1, 1, 1, 1], 1),
+            new Sample([1, 1, 0, 1], 1)];
 
-        var p = 2,
-            n = 3;
+        var attributes3 = {'I1': 0, 'I2': 1, 'I3': 2, 'I4': 3, 'I5': 4, 'I6': 5};
+        var values3 = {'I1': [1, 0], 'I2': [1, 0], 'I3': [1, 0], 'I4': [1, 0], 'I5': [1, 0], 'I6': [1, 0]};
+        var samples3 = [new Sample([1, 0, 1, 0, 0, 0], 1),
+            new Sample([1, 0, 1, 1, 0, 0], 1),
+            new Sample([1, 0, 1, 0, 1, 0], 1),
+            new Sample([1, 1, 0, 0, 1, 1], 1),
+            new Sample([1, 1, 1, 1, 0, 0], 1),
+            new Sample([1, 0, 0, 0, 1, 1], 1),
+            new Sample([1, 0, 0, 0, 1, 0], 0),
+            new Sample([0, 1, 1, 1, 0, 1], 1),
+            new Sample([0, 1, 1, 0, 1, 1], 0),
+            new Sample([0, 0, 0, 1, 1, 0], 0),
+            new Sample([0, 1, 0, 1, 0, 1], 0),
+            new Sample([0, 0, 0, 1, 0, 1], 0),
+            new Sample([0, 1, 1, 0, 1, 1], 0),
+            new Sample([0, 1, 1, 1, 0, 0], 0)
+        ];
+
+
+        $scope.samples = samples3;
+        $scope.attributes = attributes3;
+        $scope.values = values3;
+
+        var p = getNbPositiveOuput($scope.samples),
+            n = $scope.samples.length - p;
 
         //Node structure
         var NodeQuery = function (attribute) {
@@ -54,8 +85,8 @@ angular.module('myApp.view1', ['ngRoute'])
         };
 
         var entropyInit = entropyB(p / (p + n));
-        var rootNode = getTreeDecision(samples, attributes, samples);
-        var sampleToTest = samples[0];
+        var rootNode = getTreeDecision($scope.samples, $scope.attributes, $scope.samples);
+        var sampleToTest = $scope.samples[0];
         var obj = getResultFromSample(rootNode, sampleToTest, []);
         var result = obj[0];
         var path = obj[1];
@@ -67,8 +98,9 @@ angular.module('myApp.view1', ['ngRoute'])
         console.log(rootNode);
         console.log("Result for ", sampleToTest, ' -> ', result);
 
-        $scope.getResult = function () {
-            var result = getResultFromSample(rootNode, samples[$scope.indexSample], []);
+        $scope.getResult = function (index) {
+            $scope.indexSample = index;
+            var result = getResultFromSample(rootNode, $scope.samples[$scope.indexSample], []);
             $scope.resultOutput = result[0];
             $scope.indexSampleAfter = $scope.indexSample;
             console.log(result[0] + ' for ' + $scope.indexSample);
@@ -88,7 +120,7 @@ angular.module('myApp.view1', ['ngRoute'])
         var height = 20;
         var figures = [];
 
-        var paper = Raphael(300, 300, 500, 500);
+        var paper = Raphael(300, 300, 1000, 1000);
         Raphael.el.blue = function () {
             this.attr({fill: "#87CEFA"});
         };
@@ -124,15 +156,19 @@ angular.module('myApp.view1', ['ngRoute'])
                     var edge = rootNode.edge[i];
                     var newXGraph = (i + xStart );
                     buildGraph(edge.nodeTo, newDepth, newXGraph, path);
-                    var pathDim = "M" + addRadius(xGraph, height) + " " + addRadius(yGraph, width)
-                        + "L" + removeRadius((newXGraph * space * 2), height) + " " + removeRadius((newDepth * space), width);
+                    var x1 = addRadius(xGraph, height);
+                    var y1 = addRadius(yGraph, width);
+                    var x2 = removeRadius((newXGraph * space * 2), height);
+                    var y2 = removeRadius((newDepth * space), width);
+                    var pathDim = "M" + x1 + " " + y1 + "L" + x2 + " " + y2;
                     var pathLine = paper.path(pathDim);
                     pathLine.attr({
                         'arrow-end': 'classic-wide-long',
-                        'stroke': '#87CEFA',
-                        'stroke-width': 3
+                        'stroke-width': 1.5
                     });
+                    var labelPath = paper.text((x1 + x2) / 2 + 15, (y1 + y2) / 2 + 15, edge.attributeValue);
                     figures.push(pathLine);
+                    figures.push(labelPath);
                 }
             }
         }
@@ -151,7 +187,7 @@ angular.module('myApp.view1', ['ngRoute'])
             if (rootNode instanceof NodeQuery) {
                 path.push(rootNode);
                 var currentAttribute = rootNode.attribute;
-                var attributeIndex = attributes[currentAttribute];
+                var attributeIndex = $scope.attributes[currentAttribute];
                 var valueAttribute = sample.values[attributeIndex];
                 for (var i = 0; i < rootNode.edge.length && result === null; i++) {
                     var edge = rootNode.edge[i];
@@ -207,7 +243,7 @@ angular.module('myApp.view1', ['ngRoute'])
             $scope.attributeChosen = attributeChosen;
 
             decisionRootNode = new NodeQuery(attributeChosen);
-            for (var value in values[attributeChosen]) {
+            for (var value in $scope.values[attributeChosen]) {
                 console.log("Retrieving the samples for attribute " + attributeChosen + " : " + value);
                 var attributeIndex = attributes[attributeChosen];
                 var exs = [];
@@ -322,5 +358,15 @@ angular.module('myApp.view1', ['ngRoute'])
             return entropy;
         }
 
+        function getNbPositiveOuput(samples) {
+            var result = 0;
+            for (var i = 0; i < samples.length; i++) {
+                var sample = samples[i];
+                if (sample.output === 1) {
+                    result++;
+                }
+            }
+            return result;
+        }
 
     }]);

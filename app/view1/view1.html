@@ -1,17 +1,17 @@
 <table>
     <tr>
+        <td>ID</td>
         <td ng-repeat="(k, v) in attributes">{{k}}</td>
         <td>Output</td>
     </tr>
     <tr ng-repeat="s in samples">
+        <td><b>{{$index}}</b></td>
         <td ng-repeat="value in s.values track by $index">
             {{value}}
         </td>
         <td>{{ s.output }}</td>
+        <td><button ng-click="getResult($index)">TEST</button></td>
     </tr>
 </table>
 
 <p>Output {{resultOutput}} for sample n° {{indexSampleAfter}}</p>
-<form ng-submit="getResult()">
-    <input type="number" placeholder="Sample index" ng-model="indexSample">
-</form>
